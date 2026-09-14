@@ -1,0 +1,8 @@
+4x4 SS (offline): feasible 0.9% -> 25.5% (ratio=500, 28배), range 5.96e+07 -> 5.96e+07
+6x6 SS (offline): feasible 0.2% -> 40.5% (ratio=500, 202배), range 1.51e+08 -> 1.51e+08
+8x8 SS (offline): feasible 0.2% -> 44.4% (ratio=500, 222배), range 7.21e+08 -> 7.21e+08
+15x15 SS (offline): feasible 0.0% -> 5.4% (ratio=500, 0에서 상승), range 1.58e+09 -> 1.58e+09
+4x4 SS (qpu): feasible 0.4% -> 6.7% (ratio=1000, 17배), range 5.96e+07 -> 5.96e+07
+6x6 SS (qpu): feasible 0.0% -> 2.5% (ratio=1000, 0에서 상승), range 1.51e+08 -> 1.51e+08
+8x8 SS (qpu): feasible 0.0% -> 0.0% (ratio=1, 0에서 상승), range 7.21e+08 -> 7.21e+08
+15x15 SS (qpu): feasible 0.0% -> 0.0% (ratio=1, 0에서 상승), range 1.58e+09 -> 1.58e+09

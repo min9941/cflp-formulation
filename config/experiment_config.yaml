@@ -1,0 +1,179 @@
+# CFLP SS vs MS 실험 설정 파일
+# 실험에서 사용하는 모든 고정값은 이 파일 한 곳에서 관리한다.
+# 코드 안에 값을 하드코딩하지 않는다.
+
+# ---------------------------------------------------------------
+# 실험 instance 목록
+#   size: |I| = |J| = size (customer 수 = facility 수)
+#   seed: instance 생성용 random seed (재현성 보장)
+# ---------------------------------------------------------------
+instances:
+  - name: "4x4"
+    size: 4
+    seed: 100
+  - name: "6x6"
+    size: 6
+    seed: 200
+  - name: "8x8"
+    size: 8
+    seed: 300
+  - name: "15x15"
+    size: 15
+    seed: 400
+
+# ---------------------------------------------------------------
+# 데이터 생성 파라미터
+#   Beasley(OR-Library) / Cornuejols-Sridharan-Thizy(1991) 계열의
+#   CFLP instance generation 구조를 따른다. 자세한 근거는 README 참조.
+# ---------------------------------------------------------------
+data:
+  # 위치: U[0,1] x U[0,1]
+  coord_low: 0.0
+  coord_high: 1.0
+
+  # 수요: d_i ~ Normal(demand_mean, demand_std), 반올림 후 최소 1로 clip
+  demand_mean: 35
+  demand_std: 5
+  demand_min: 1
+
+  # 용량: s_j ~ Uniform[capacity_low, capacity_high] 이후 rescaling
+  capacity_low: 10
+  capacity_high: 160
+
+  # 전체 capacity / 전체 demand 비율 (rescaling 목표값)
+  capacity_ratio: 1.5
+
+  # 고정 개설비용: f_j = U[fixed_base_low, fixed_base_high]
+  #                     + U[fixed_slope_low, fixed_slope_high] * sqrt(s_j)
+  fixed_base_low: 0
+  fixed_base_high: 90
+  fixed_slope_low: 100
+  fixed_slope_high: 110
+
+  # 운송비: c_ij = transportation_scale * dist_ij
+  transportation_scale: 10
+  # 운송비 저장 시 소수점 자리수 (임의의 큰 scaling은 적용하지 않는다)
+  cost_decimals: 4
+
+# ---------------------------------------------------------------
+# Encoding 설정
+# ---------------------------------------------------------------
+encoding:
+  # MS allocation의 정밀도. 1 = 1 unit shipment precision.
+  precision: 1
+
+# ---------------------------------------------------------------
+# Penalty coefficient
+#   lambda = penalty_margin * (sum_j f_j + sum_ij c_ij * d_i)
+#   grid search 하지 않는다. margin은 실험 전에 고정한다.
+# ---------------------------------------------------------------
+penalty:
+  margin: 1.1
+
+# ---------------------------------------------------------------
+# Gurobi
+# ---------------------------------------------------------------
+gurobi:
+  mip_gap: 0.0
+  time_limit: 600
+  output_flag: 0
+  seed: 0
+
+# ---------------------------------------------------------------
+# Simulated Annealing (dwave-neal)
+#   결과를 보고 튜닝하지 않는다.
+# ---------------------------------------------------------------
+sa:
+  num_reads: 1000
+  num_sweeps: 1000
+  seed: 12345
+
+# ---------------------------------------------------------------
+# Quantum Annealing (D-Wave QPU)
+#   chain_strength는 절대값이 아니라 계수에 비례하는 규칙으로 고정한다.
+#   chain_strength = chain_strength_alpha * max|J_ij|
+# ---------------------------------------------------------------
+qa:
+  chain_strength_alpha: 1.5
+  annealing_time: 20          # microseconds
+  num_reads: 1000
+  # solver_name: null            # null이면 기본 Advantage solver 사용
+  solver_name: Advantage_system6            # null이면 기본 Advantage solver 사용
+  chain_break_method: "majority_vote"
+
+# ---------------------------------------------------------------
+# Minor embedding
+#   재현성을 위해 seed와 timeout을 고정한다.
+# ---------------------------------------------------------------
+embedding:
+  seed: 2024
+  timeout: 300                 # seconds
+  tries: 5
+
+# ---------------------------------------------------------------
+# QUBO 정확성 검증
+# ---------------------------------------------------------------
+validation:
+  random_samples: 2000
+  random_seed: 777
+  tolerance: 1.0e-6
+  # 별도의 toy instance (실제 실험 instance 아님, exhaustive 검증 전용)
+  toy:
+    num_customers: 2
+    num_facilities: 2
+    demands: [3, 4]
+    capacities: [6, 5]
+    fixed_costs: [40.0, 35.0]
+    transport_costs:
+      - [1.0, 3.0]
+      - [4.0, 2.0]
+
+# ---------------------------------------------------------------
+# Feasibility 판정 tolerance
+# ---------------------------------------------------------------
+feasibility:
+  tolerance: 1.0e-6
+
+# ---------------------------------------------------------------
+# 경로
+# ---------------------------------------------------------------
+paths:
+  data_dir: "data/generated"
+  raw_dir: "results/raw"
+  processed_dir: "results/processed"
+  figure_dir: "results/figures"
+
+# ---------------------------------------------------------------
+# Embedding 실패 원인 분석 실험 (notebook 14, 15, 16)
+#   MS가 6x6 이상에서 embedding에 실패한 원인이
+#     (a) search budget  (b) topology  (c) formulation
+#   중 무엇인지 구분하기 위한 sweep 설정.
+# ---------------------------------------------------------------
+embedding_study:
+  # (topology 이름, 크기). 둘 다 결함 없는 이상적 그래프이다.
+  #   pegasus 16 : Advantage 세대   (5,640 노드, 평균차수 14.4)
+  #   zephyr  15 : Advantage2 세대  (7,440 노드, 평균차수 19.3)
+  topologies:
+    - [pegasus, 16]
+    - [zephyr, 12]
+
+  # timeout sweep: tries를 고정하고 timeout을 훑는다.
+  timeouts: [300, 600, 1200, 2400]
+  timeout_sweep_tries: 5
+
+  # tries sweep: timeout을 고정하고 tries를 훑는다.
+  tries_grid: [5, 10, 20, 50]
+  tries_sweep_timeout: 300
+
+  # 각 조건마다 반복할 random seed. embedding 탐색이 확률적이므로
+  # seed 하나로 판정하지 않고 성공률로 본다.
+  seeds: [2024, 2025, 2026, 2027, 2028]
+
+# ---------------------------------------------------------------
+# ICE 노이즈 주입 (sampling 실험용)
+#   embedding 탐색은 그래프 구조만 쓰므로 이 설정의 영향을 받지 않는다.
+#   sampling을 함께 수행하는 실험에서만 사용된다.
+# ---------------------------------------------------------------
+noise:
+  enabled: false
+  sigma: 0.02          # 정규화 단위. D-Wave ICE 수준은 대략 0.01~0.03

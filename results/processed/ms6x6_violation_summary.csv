@@ -1,0 +1,6 @@
+source,min_violation,p01_violation,p05_violation,median_violation,max_violation,num_violation_le_1,num_violation_le_3,num_violation_le_5,num_violation_le_10,seed
+SA,0.0,0.0,0.0,0.0,4.0,998,999,1000,1000,
+QA a=0.7 seed=2024,14.0,25.0,35.0,61.0,135.0,0,0,0,0,2024.0
+QA a=1.5 seed=2024,47.0,67.0,87.95,138.0,314.0,0,0,0,0,2024.0
+QA a=0.7 seed=2026,11.0,18.990000000000002,29.0,63.5,144.0,0,0,0,0,2026.0
+QA a=1.5 seed=2026,34.0,62.99,78.0,128.5,258.0,0,0,0,0,2026.0

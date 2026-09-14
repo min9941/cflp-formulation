@@ -1,0 +1,27 @@
+instance,formulation,check,passed,message
+4x4,SS,energy_identity,True,무작위 2000개 샘플의 최대 상대오차 5.524e-15 (허용 1.0e-06)
+4x4,SS,reference_encoding,True,"제약 잔차 최대 0.000e+00, energy와 MILP 목적값의 상대차 1.915e-12"
+4x4,MS,energy_identity,True,무작위 2000개 샘플의 최대 상대오차 2.856e-15 (허용 1.0e-06)
+4x4,MS,reference_encoding,True,"제약 잔차 최대 0.000e+00, energy와 MILP 목적값의 상대차 3.697e-12"
+6x6,SS,energy_identity,True,무작위 2000개 샘플의 최대 상대오차 1.627e-15 (허용 1.0e-06)
+6x6,SS,reference_encoding,True,"제약 잔차 최대 0.000e+00, energy와 MILP 목적값의 상대차 2.365e-12"
+6x6,MS,energy_identity,True,무작위 2000개 샘플의 최대 상대오차 4.771e-15 (허용 1.0e-06)
+6x6,MS,reference_encoding,True,"제약 잔차 최대 0.000e+00, energy와 MILP 목적값의 상대차 3.466e-12"
+8x8,SS,energy_identity,True,무작위 2000개 샘플의 최대 상대오차 2.178e-15 (허용 1.0e-06)
+8x8,SS,reference_encoding,True,"제약 잔차 최대 0.000e+00, energy와 MILP 목적값의 상대차 2.605e-11"
+8x8,MS,energy_identity,True,무작위 2000개 샘플의 최대 상대오차 5.851e-15 (허용 1.0e-06)
+8x8,MS,reference_encoding,True,"제약 잔차 최대 0.000e+00, energy와 MILP 목적값의 상대차 4.080e-11"
+15x15,SS,energy_identity,True,무작위 2000개 샘플의 최대 상대오차 2.825e-15 (허용 1.0e-06)
+15x15,SS,reference_encoding,True,"제약 잔차 최대 0.000e+00, energy와 MILP 목적값의 상대차 1.385e-11"
+15x15,MS,energy_identity,True,무작위 2000개 샘플의 최대 상대오차 4.362e-14 (허용 1.0e-06)
+15x15,MS,reference_encoding,True,"제약 잔차 최대 0.000e+00, energy와 MILP 목적값의 상대차 3.540e-11"
+toy2x2,SS,exhaustive,True,"QUBO ground state의 목적값 86.000000 vs MILP 최적값 86.000000 (상대차 0.000e+00), 제약 잔차 최대 0.000e+00"
+toy2x2,MS,exhaustive,True,"QUBO ground state의 목적값 86.000000 vs MILP 최적값 86.000000 (상대차 0.000e+00), 제약 잔차 최대 0.000e+00"
+4x4,SS,exhaustive,True,SKIPPED — QUBO 변수 44개는 전수 열거 한계(24)를 초과합니다.
+4x4,MS,exhaustive,True,SKIPPED — QUBO 변수 120개는 전수 열거 한계(24)를 초과합니다.
+6x6,SS,exhaustive,True,SKIPPED — QUBO 변수 79개는 전수 열거 한계(24)를 초과합니다.
+6x6,MS,exhaustive,True,SKIPPED — QUBO 변수 259개는 전수 열거 한계(24)를 초과합니다.
+8x8,SS,exhaustive,True,SKIPPED — QUBO 변수 117개는 전수 열거 한계(24)를 초과합니다.
+8x8,MS,exhaustive,True,SKIPPED — QUBO 변수 413개는 전수 열거 한계(24)를 초과합니다.
+15x15,SS,exhaustive,True,SKIPPED — QUBO 변수 329개는 전수 열거 한계(24)를 초과합니다.
+15x15,MS,exhaustive,True,SKIPPED — QUBO 변수 1439개는 전수 열거 한계(24)를 초과합니다.

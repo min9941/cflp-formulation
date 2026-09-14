@@ -1,0 +1,226 @@
+======================================================================
+사전 검증: binary expansion 표현 완전성
+======================================================================
+    [PASS] encoding_completeness: 70개 상한에 대해 표현 범위가 정확히 [0, U]와 일치
+
+======================================================================
+인스턴스 4x4 검증
+======================================================================
+
+--- Step 1: instance 생성 ---
+    |I|=4, |J|=4, sum d=129, sum s=194, ratio=1.5039
+
+--- Step 2: Gurobi로 SS / MS / MS-int-q 해결 ---
+    SS      obj=   2416.8364  status=OPTIMAL  time=0.001s  gap=0.00e+00
+    MS      obj=   2416.8364  status=OPTIMAL  time=0.002s  gap=0.00e+00
+    MS_INT  obj=   2416.8364  status=OPTIMAL  time=0.001s  gap=0.00e+00
+
+--- Step 3: Gurobi 해의 feasibility 및 대소 관계 확인 ---
+    SS feasible=True
+    MS feasible=True
+    MS-int feasible=True
+    기대 관계 MS <= MS-int <= SS : True (2416.8364 <= 2416.8364 <= 2416.8364)
+
+--- Step 4: SS QUBO 생성 ---
+    변수=44 (decision=20, encoding=0, slack=24), 항=290, lambda=5.9172e+03
+    계수 범위: [-3.0651e+07, 2.8995e+07]
+
+--- Step 5: MS QUBO 생성 ---
+    변수=120 (decision=4, encoding=92, slack=24), 항=2660, lambda=5.9172e+03
+    계수 범위: [-2.6509e+07, 2.8995e+07]
+
+--- Step 6: QUBO variable mapping 및 energy 항등식 확인 ---
+    [PASS] energy_identity[SS/4x4]: 무작위 2000개 샘플의 최대 상대오차 5.524e-15 (허용 1.0e-06)
+    [PASS] reference_encoding[SS/4x4]: 제약 잔차 최대 0.000e+00, energy와 MILP 목적값의 상대차 1.915e-12
+    [PASS] energy_identity[MS/4x4]: 무작위 2000개 샘플의 최대 상대오차 3.220e-15 (허용 1.0e-06)
+    [PASS] reference_encoding[MS/4x4]: 제약 잔차 최대 0.000e+00, energy와 MILP 목적값의 상대차 3.697e-12
+
+--- Step 7: toy instance 전수 검증 + 실제 instance 전수 검증 가능 여부 ---
+    [PASS] exhaustive[SS/toy2x2]: QUBO ground state의 목적값 86.000000 vs MILP 최적값 86.000000 (상대차 0.000e+00), 제약 잔차 최대 0.000e+00
+    [PASS] exhaustive[MS/toy2x2]: QUBO ground state의 목적값 86.000000 vs MILP 최적값 86.000000 (상대차 0.000e+00), 제약 잔차 최대 0.000e+00
+    [PASS] exhaustive[SS/4x4]: SKIPPED — QUBO 변수 44개는 전수 열거 한계(24)를 초과합니다.
+    [PASS] exhaustive[MS/4x4]: SKIPPED — QUBO 변수 120개는 전수 열거 한계(24)를 초과합니다.
+
+--- Step 8: SA로 QUBO 해결 ---
+    SS: energy=2593.0879, obj=2593.0879, feasible=True, feasible_fraction=0.009, time=0.76s
+    MS: energy=3123.4155, obj=3123.4155, feasible=True, feasible_fraction=0.897, time=4.29s
+
+--- Step 9: SA 해 decode ---
+    SS 개설 시설 수 = 2
+    MS 요약 = {'opened_facilities': 3, 'used_facilities': 3, 'split_customers': 4}
+
+--- Step 10: 원래 CFLP feasibility 재검증 및 true gap 계산 ---
+    SS: best feasible obj=2593.0879, true gap=7.2927%
+    MS: best feasible obj=3123.4155, true gap=29.2357%
+
+--- Step 11: QA embedding 시도 ---
+    (QPU 토큰이 있는 환경에서 notebooks/05_run_qa.ipynb로 수행)
+
+[OK] 4x4 검증 통과
+
+======================================================================
+인스턴스 6x6 검증
+======================================================================
+
+--- Step 1: instance 생성 ---
+    |I|=6, |J|=6, sum d=226, sum s=339, ratio=1.5000
+
+--- Step 2: Gurobi로 SS / MS / MS-int-q 해결 ---
+    SS      obj=   4886.7940  status=OPTIMAL  time=0.001s  gap=0.00e+00
+    MS      obj=   3968.8513  status=OPTIMAL  time=0.012s  gap=0.00e+00
+    MS_INT  obj=   3968.8513  status=OPTIMAL  time=0.011s  gap=0.00e+00
+
+--- Step 3: Gurobi 해의 feasibility 및 대소 관계 확인 ---
+    SS feasible=True
+    MS feasible=True
+    MS-int feasible=True
+    기대 관계 MS <= MS-int <= SS : True (3968.8513 <= 3968.8513 <= 4886.7940)
+
+--- Step 4: SS QUBO 생성 ---
+    변수=79 (decision=42, encoding=0, slack=37), 항=650, lambda=1.2971e+04
+    계수 범위: [-8.9498e+07, 6.1755e+07]
+
+--- Step 5: MS QUBO 생성 ---
+    변수=259 (decision=6, encoding=216, slack=37), 항=8960, lambda=1.2971e+04
+    계수 범위: [-5.7279e+07, 6.1755e+07]
+
+--- Step 6: QUBO variable mapping 및 energy 항등식 확인 ---
+    [PASS] energy_identity[SS/6x6]: 무작위 2000개 샘플의 최대 상대오차 1.627e-15 (허용 1.0e-06)
+    [PASS] reference_encoding[SS/6x6]: 제약 잔차 최대 0.000e+00, energy와 MILP 목적값의 상대차 2.365e-12
+    [PASS] energy_identity[MS/6x6]: 무작위 2000개 샘플의 최대 상대오차 4.771e-15 (허용 1.0e-06)
+    [PASS] reference_encoding[MS/6x6]: 제약 잔차 최대 0.000e+00, energy와 MILP 목적값의 상대차 3.466e-12
+
+--- Step 7: toy instance 전수 검증 + 실제 instance 전수 검증 가능 여부 ---
+    [PASS] exhaustive[SS/toy2x2]: QUBO ground state의 목적값 86.000000 vs MILP 최적값 86.000000 (상대차 0.000e+00), 제약 잔차 최대 0.000e+00
+    [PASS] exhaustive[MS/toy2x2]: QUBO ground state의 목적값 86.000000 vs MILP 최적값 86.000000 (상대차 0.000e+00), 제약 잔차 최대 0.000e+00
+    [PASS] exhaustive[SS/6x6]: SKIPPED — QUBO 변수 79개는 전수 열거 한계(24)를 초과합니다.
+    [PASS] exhaustive[MS/6x6]: SKIPPED — QUBO 변수 259개는 전수 열거 한계(24)를 초과합니다.
+
+--- Step 8: SA로 QUBO 해결 ---
+    SS: energy=18324.8939, obj=5354.1282, feasible=False, feasible_fraction=0.002, time=1.38s
+    MS: energy=5193.7256, obj=5193.7256, feasible=True, feasible_fraction=0.977, time=12.16s
+
+--- Step 9: SA 해 decode ---
+    SS 개설 시설 수 = 5
+    MS 요약 = {'opened_facilities': 5, 'used_facilities': 5, 'split_customers': 6}
+
+--- Step 10: 원래 CFLP feasibility 재검증 및 true gap 계산 ---
+    SS: best feasible obj=5988.4188, true gap=22.5429%
+    MS: best feasible obj=5193.725600000001, true gap=30.8622%
+
+--- Step 11: QA embedding 시도 ---
+    (QPU 토큰이 있는 환경에서 notebooks/05_run_qa.ipynb로 수행)
+
+[OK] 6x6 검증 통과
+
+======================================================================
+인스턴스 8x8 검증
+======================================================================
+
+--- Step 1: instance 생성 ---
+    |I|=8, |J|=8, sum d=276, sum s=414, ratio=1.5000
+
+--- Step 2: Gurobi로 SS / MS / MS-int-q 해결 ---
+    SS      obj=   3952.5153  status=OPTIMAL  time=0.004s  gap=0.00e+00
+    MS      obj=   3626.6311  status=OPTIMAL  time=0.002s  gap=0.00e+00
+    MS_INT  obj=   3626.6311  status=OPTIMAL  time=0.002s  gap=0.00e+00
+
+--- Step 3: Gurobi 해의 feasibility 및 대소 관계 확인 ---
+    SS feasible=True
+    MS feasible=True
+    MS-int feasible=True
+    기대 관계 MS <= MS-int <= SS : True (3626.6311 <= 3626.6311 <= 3952.5153)
+
+--- Step 4: SS QUBO 생성 ---
+    변수=117 (decision=72, encoding=0, slack=45), 항=1147, lambda=1.8025e+04
+    계수 범위: [-3.3684e+08, 3.8421e+08]
+
+--- Step 5: MS QUBO 생성 ---
+    변수=413 (decision=8, encoding=360, slack=45), 항=18016, lambda=1.8025e+04
+    계수 범위: [-3.3684e+08, 3.8421e+08]
+
+--- Step 6: QUBO variable mapping 및 energy 항등식 확인 ---
+    [PASS] energy_identity[SS/8x8]: 무작위 2000개 샘플의 최대 상대오차 2.178e-15 (허용 1.0e-06)
+    [PASS] reference_encoding[SS/8x8]: 제약 잔차 최대 0.000e+00, energy와 MILP 목적값의 상대차 2.605e-11
+    [PASS] energy_identity[MS/8x8]: 무작위 2000개 샘플의 최대 상대오차 5.851e-15 (허용 1.0e-06)
+    [PASS] reference_encoding[MS/8x8]: 제약 잔차 최대 0.000e+00, energy와 MILP 목적값의 상대차 4.080e-11
+
+--- Step 7: toy instance 전수 검증 + 실제 instance 전수 검증 가능 여부 ---
+    [PASS] exhaustive[SS/toy2x2]: QUBO ground state의 목적값 86.000000 vs MILP 최적값 86.000000 (상대차 0.000e+00), 제약 잔차 최대 0.000e+00
+    [PASS] exhaustive[MS/toy2x2]: QUBO ground state의 목적값 86.000000 vs MILP 최적값 86.000000 (상대차 0.000e+00), 제약 잔차 최대 0.000e+00
+    [PASS] exhaustive[SS/8x8]: SKIPPED — QUBO 변수 117개는 전수 열거 한계(24)를 초과합니다.
+    [PASS] exhaustive[MS/8x8]: SKIPPED — QUBO 변수 413개는 전수 열거 한계(24)를 초과합니다.
+
+--- Step 8: SA로 QUBO 해결 ---
+    SS: energy=5725.8053, obj=5725.8053, feasible=True, feasible_fraction=0.002, time=2.27s
+    MS: energy=6683.2315, obj=6683.2315, feasible=True, feasible_fraction=0.909, time=23.27s
+
+--- Step 9: SA 해 decode ---
+    SS 개설 시설 수 = 5
+    MS 요약 = {'opened_facilities': 8, 'used_facilities': 8, 'split_customers': 8}
+
+--- Step 10: 원래 CFLP feasibility 재검증 및 true gap 계산 ---
+    SS: best feasible obj=5271.9610999999995, true gap=33.3824%
+    MS: best feasible obj=6683.2315, true gap=84.2821%
+
+--- Step 11: QA embedding 시도 ---
+    (QPU 토큰이 있는 환경에서 notebooks/05_run_qa.ipynb로 수행)
+
+[OK] 8x8 검증 통과
+
+======================================================================
+인스턴스 15x15 검증
+======================================================================
+
+--- Step 1: instance 생성 ---
+    |I|=15, |J|=15, sum d=539, sum s=808, ratio=1.4991
+
+--- Step 2: Gurobi로 SS / MS / MS-int-q 해결 ---
+    SS      obj=   8489.1855  status=OPTIMAL  time=0.088s  gap=0.00e+00
+    MS      obj=   7909.2986  status=OPTIMAL  time=0.022s  gap=0.00e+00
+    MS_INT  obj=   7909.2986  status=OPTIMAL  time=0.085s  gap=0.00e+00
+
+--- Step 3: Gurobi 해의 feasibility 및 대소 관계 확인 ---
+    SS feasible=True
+    MS feasible=True
+    MS-int feasible=True
+    기대 관계 MS <= MS-int <= SS : True (7909.2986 <= 7909.2986 <= 8489.1855)
+
+--- Step 4: SS QUBO 생성 ---
+    변수=329 (decision=240, encoding=0, slack=89), 항=5355, lambda=6.2683e+04
+    계수 범위: [-7.4969e+08, 8.2899e+08]
+
+--- Step 5: MS QUBO 생성 ---
+    변수=1439 (decision=15, encoding=1335, slack=89), 항=125296, lambda=6.2683e+04
+    계수 범위: [-7.4969e+08, 8.2899e+08]
+
+--- Step 6: QUBO variable mapping 및 energy 항등식 확인 ---
+    [PASS] energy_identity[SS/15x15]: 무작위 2000개 샘플의 최대 상대오차 4.202e-15 (허용 1.0e-06)
+    [PASS] reference_encoding[SS/15x15]: 제약 잔차 최대 0.000e+00, energy와 MILP 목적값의 상대차 1.385e-11
+    [PASS] energy_identity[MS/15x15]: 무작위 2000개 샘플의 최대 상대오차 4.364e-14 (허용 1.0e-06)
+    [PASS] reference_encoding[MS/15x15]: 제약 잔차 최대 0.000e+00, energy와 MILP 목적값의 상대차 3.540e-11
+
+--- Step 7: toy instance 전수 검증 + 실제 instance 전수 검증 가능 여부 ---
+    [PASS] exhaustive[SS/toy2x2]: QUBO ground state의 목적값 86.000000 vs MILP 최적값 86.000000 (상대차 0.000e+00), 제약 잔차 최대 0.000e+00
+    [PASS] exhaustive[MS/toy2x2]: QUBO ground state의 목적값 86.000000 vs MILP 최적값 86.000000 (상대차 0.000e+00), 제약 잔차 최대 0.000e+00
+    [PASS] exhaustive[SS/15x15]: SKIPPED — QUBO 변수 329개는 전수 열거 한계(24)를 초과합니다.
+    [PASS] exhaustive[MS/15x15]: SKIPPED — QUBO 변수 1439개는 전수 열거 한계(24)를 초과합니다.
+
+--- Step 8: SA로 QUBO 해결 ---
+    SS: energy=389389.5387, obj=13289.6178, feasible=False, feasible_fraction=0.000, time=7.14s
+    MS: energy=14477.0340, obj=14477.0340, feasible=True, feasible_fraction=0.999, time=145.79s
+
+--- Step 9: SA 해 decode ---
+    SS 개설 시설 수 = 11
+    MS 요약 = {'opened_facilities': 15, 'used_facilities': 15, 'split_customers': 15}
+
+--- Step 10: 원래 CFLP feasibility 재검증 및 true gap 계산 ---
+    SS: best feasible obj=None, true gap=nan%
+    MS: best feasible obj=14477.034, true gap=83.0382%
+
+--- Step 11: QA embedding 시도 ---
+    (QPU 토큰이 있는 환경에서 notebooks/05_run_qa.ipynb로 수행)
+
+[OK] 15x15 검증 통과
+
+모든 검증을 통과했습니다.

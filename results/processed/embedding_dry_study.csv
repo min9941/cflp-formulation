@@ -1,0 +1,6 @@
+instance,formulation,topology,topology_label,topology_size,timeout,tries,seed,logical_variables,logical_edges,sweep,success,elapsed,physical_qubits,avg_chain_length,max_chain_length,embedding_overhead
+6x6,MS,zephyr,zephyr12,12,4800,20,2024,259,8701,timeout,True,1719.8563323999988,3401.0,13.13127413127413,25.0,13.13127413127413
+6x6,MS,zephyr,zephyr12,12,4800,20,2025,259,8701,timeout,True,1622.705990300019,3498.0,13.505791505791505,23.0,13.505791505791505
+6x6,MS,zephyr,zephyr12,12,4800,20,2026,259,8701,timeout,False,2879.7060693000094,,,,
+6x6,MS,zephyr,zephyr12,12,4800,20,2027,259,8701,timeout,True,1577.1549005999987,3790.0,14.633204633204633,27.0,14.633204633204633
+6x6,MS,zephyr,zephyr12,12,4800,20,2028,259,8701,timeout,True,2313.4863734000246,3821.0,14.752895752895753,27.0,14.752895752895753

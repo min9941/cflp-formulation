@@ -1,0 +1,26 @@
+# CFLP SS vs MS: Gurobi / SA / QA 비교 실험 의존성
+#
+# Gurobi는 pip 배포판에 포함된 제한 라이선스(변수/제약 2000개 한도)로도
+# 본 실험의 모든 instance(최대 240 변수)를 풀 수 있다. 더 큰 문제를 다루려면
+# 별도 라이선스가 필요하다.
+
+numpy>=1.26
+pandas>=2.0
+matplotlib>=3.8
+pyyaml>=6.0
+
+# MILP
+gurobipy>=11.0
+
+# QUBO / Simulated Annealing / Quantum Annealing
+dimod>=0.12
+dwave-neal>=0.6
+dwave-system>=1.25
+minorminer>=0.2
+dwave-networkx>=0.8   # 오프라인 Pegasus 그래프 (notebook 12 dry-run)
+
+# Notebook 실행
+jupyter>=1.0
+nbformat>=5.9
+nbconvert>=7.0
+ipython>=8.0

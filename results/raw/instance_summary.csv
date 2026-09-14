@@ -1,0 +1,5 @@
+instance,size,seed,total_demand,total_capacity,capacity_ratio,demand_min,demand_max,capacity_min,capacity_max,fixed_cost_mean,transport_cost_max
+4x4,4,100,129,194,1.5039,25,37,25,70,761.38,7.3361
+6x6,6,200,226,339,1.5,32,50,38,69,838.06,11.0562
+8x8,8,300,276,414,1.5,27,44,12,146,698.54,10.3696
+15x15,15,400,539,808,1.4991,20,44,9,115,787.43,12.4401

@@ -1,0 +1,33 @@
+[QUBO 크기]
+     4x4 MS: 변수   120, 항    2660, 계수 범위 5.550e+07
+     4x4 SS: 변수    44, 항     290, 계수 범위 5.965e+07
+     6x6 MS: 변수   259, 항    8960, 계수 범위 1.190e+08
+     6x6 SS: 변수    79, 항     650, 계수 범위 1.513e+08
+     8x8 MS: 변수   413, 항   18016, 계수 범위 7.211e+08
+     8x8 SS: 변수   117, 항    1147, 계수 범위 7.211e+08
+   15x15 MS: 변수  1439, 항  125296, 계수 범위 1.579e+09
+   15x15 SS: 변수   329, 항    5355, 계수 범위 1.579e+09
+
+[이산화 손실 (MS-int-q vs MS)]
+   15x15: 0.000000%
+     4x4: 0.000000%
+     6x6: 0.000000%
+     8x8: 0.000000%
+
+[SA / QA true optimality gap]
+  QA MS    4x4: 미실행 (NO_QPU_ACCESS)
+  QA MS    6x6: 미실행 (NO_QPU_ACCESS)
+  QA MS    8x8: 미실행 (NO_QPU_ACCESS)
+  QA MS  15x15: 미실행 (NO_QPU_ACCESS)
+  QA SS    4x4: 미실행 (NO_QPU_ACCESS)
+  QA SS    6x6: 미실행 (NO_QPU_ACCESS)
+  QA SS    8x8: 미실행 (NO_QPU_ACCESS)
+  QA SS  15x15: 미실행 (NO_QPU_ACCESS)
+  SA MS    4x4: gap   29.236%, feasible 비율 0.897
+  SA MS    6x6: gap   30.862%, feasible 비율 0.977
+  SA MS    8x8: gap   84.282%, feasible 비율 0.909
+  SA MS  15x15: gap   83.038%, feasible 비율 0.999
+  SA SS    4x4: gap    7.293%, feasible 비율 0.009
+  SA SS    6x6: gap   22.543%, feasible 비율 0.002
+  SA SS    8x8: gap   33.382%, feasible 비율 0.002
+  SA SS  15x15: 실행했으나 feasible 해 없음

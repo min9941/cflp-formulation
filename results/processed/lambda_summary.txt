@@ -1,0 +1,3 @@
+SA: lambda 낮은 구간 feasible 0.013 vs 높은 구간 0.010 (차이 +0.003)
+QA: lambda 낮은 구간 feasible 0.005 vs 높은 구간 0.006 (차이 -0.001)
+=> 둘 다 반응 없음. lambda 외의 요인을 찾아야 합니다.
