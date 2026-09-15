@@ -6,97 +6,193 @@ Capacitated Facility Location Problem(CFLP)을 **Single-source(SS)** 와
 **Quantum Annealing(QA, D-Wave Advantage / Advantage2)** 으로 해결해 비교한
 연구용 코드베이스이다.
 
-**결론부터.** penalty 기반 QUBO로 변환한 CFLP는 현재 세대 quantum annealer에서
-풀리지 않는다. 이 저장소는 그 실패의 원인을 후보별로 소거해 특정한 기록이다.
-원인은 QUBO 변환 오류도, 이산화 손실도, embedding 실패도, chain break도,
-탐색 예산 부족도 아니었다. **coefficient dynamic range**였다.
+이 저장소의 핵심 주장은 두 가지다.
+
+**모든 constraint에 같은 penalty coefficient를 쓰는 관행이 QA 실패의 주된
+원인이다.** constraint마다 계수 크기가 달라 제곱 후 증폭 정도가 다르므로, 같은
+λ를 써도 하드웨어가 보는 제약 강도가 10³~10⁴배까지 벌어진다. 이를 보정하면
+QA가 SS 4×4에서 **최적해**를, 6×6에서 **gap 2.95%** 를 찾는다. 보정 전에는
+둘 다 실패했다.
+
+**그럼에도 MS는 어떤 보정으로도 풀리지 않는다.** embedding과 chain break가
+모두 정상인데도 feasible solution이 0개이고, 제약 위반량의 중앙값이 총수요의
+27%에 달한다. 원인은 coefficient dynamic range이며, 이것은 penalty 방식의
+구조적 귀결이다.
+
+이 README의 모든 수치는 `results/` 아래 CSV에서 직접 읽은 값이다.
 
 ---
 
-## 한 장으로 보는 결과
+## 결과 1: penalty 균형 보정이 QA를 살린다
 
-같은 QUBO(MS 6×6)를 SA와 QA로 풀었을 때 제약 위반량의 분포다.
+`capacity` penalty를 고정한 채 `assignment` penalty에만 배수(ratio)를 곱한
+결과다. 실제 QPU 실행이며, `results/processed/penalty_balance.csv`에 있다.
 
-![violation distribution](results/figures/figure21_violation_distribution.png)
-
-| | SA | QA (α=0.7) | QA (α=1.5) |
+| instance | ratio=1 (기존) | 최적 ratio | 개선 |
 |---|---|---|---|
-| 최소 위반량 | **0** | 14 | 32 |
-| 중앙값 | **0** | 61 | 128 |
-| 최대 위반량 | **4** | 137 | 285 |
-| feasible 비율 | **97.7%** | 0% | 0% |
-| 위반 ≤ 10인 sample | **1,000 / 1,000** | 0 | 0 |
+| **SS 4×4** | feasible 0.4%, gap 0.4% | ratio 1000 → feasible **6.7%**, gap **0.0%** | 최적해 발견 |
+| **SS 6×6** | feasible **0%** | ratio 1000 → feasible **2.5%**, gap **2.95%** | 0에서 발생 |
+| SS 8×8 | 0% | 모든 ratio에서 0% | — |
+| SS 15×15 | 0% | 모든 ratio에서 0% | — |
 
-**QA의 최소 위반량이 SA의 최대 위반량보다 크다.** 두 분포는 겹치지 않는다.
-같은 QUBO, 같은 제약, 같은 penalty이므로 차이는 하드웨어뿐이다.
+**ratio 1000까지 coefficient range는 전혀 변하지 않는다.** 4×4·6×6은
+`5.96×10⁷`·`1.51×10⁸`으로 고정이고, ratio 5000에서야 늘기 시작한다.
+즉 **dynamic range를 대가로 치르지 않고 얻은 개선**이다.
 
-QA 쪽은 embedding도 성공했고(4,503 물리 큐빗) chain break도 1.5%로 낮았다.
-즉 "탐색이 어려워서"도 "사슬이 끊어져서"도 아니다.
+SA로도 같은 경향이 나타난다(오프라인, `mode=offline`).
 
----
+| instance | ratio=1 | 최적 ratio | 배수 |
+|---|---|---|---|
+| SS 4×4 | 0.9% | 25.5% (ratio 500) | ×28 |
+| SS 6×6 | 0.2% | 40.5% (ratio 500) | ×203 |
+| SS 8×8 | 0.2% | 44.4% (ratio 500) | ×222 |
+| SS 15×15 | 0.0% | 5.4% (ratio 500) | 0에서 발생 |
 
-## 주요 발견
+### 왜 이런 일이 생기는가
 
-### 1. embedding을 가르는 것은 변수 수가 아니라 graph density
-
-MS 6×6은 논리변수 **259개**로 실패하는데 SS 15×15는 **329개**로 성공한다.
-변수가 더 많은 쪽이 들어간다. 6×6에서 이차항이 SS 571개, MS 8,701개로 **15배**
-차이나기 때문이다. MS는 `q_ij`를 binary expansion하면서 한 constraint 안의 항이
-늘고, 제곱 전개 시 이차항이 **항 수의 제곱**으로 늘어난다.
-
-### 2. 1 unit discretization 손실은 구조적으로 0
-
-`y`를 고정하면 남는 `q` 문제는 transportation problem이고 그 제약행렬은
-**totally unimodular**이다. demand와 capacity가 정수이므로 LP 최적해가 이미
-정수점에 놓인다. 네 instance 모두 연속 해의 소수부가 정확히 0이었다.
-
-따라서 QUBO 해의 gap은 **이산화가 아니라 solver 품질**에서 온 것으로 귀속된다.
-
-### 3. feasibility와 solution quality는 반대 방향을 가리킨다
-
-| | SS feasible | MS feasible | SS gap | MS gap |
-|---|---|---|---|---|
-| 4×4 | 0.9% | 89.7% | 7.3% | 29.2% |
-| 6×6 | 0.2% | 97.7% | 22.5% | 30.9% |
-| 8×8 | 0.2% | 90.9% | 33.4% | 84.3% |
-| 15×15 | 0.0% | 99.9% | 해 없음 | 83.0% |
-
-MS는 constraint를 훨씬 쉽게 만족시키지만 optimality gap은 오히려 크다.
-**"어느 formulation이 나은가"에 한 문장으로 답할 수 없다**는 것이 이 실험의 답이다.
-
-### 4. 같은 λ를 써도 constraint별 강도는 10⁴배 차이난다
-
-가장 실용적인 발견이다.
-
-| constraint | 제곱 후 계수 규모 | 8×8 정규화 강도 |
+| constraint | 제곱 후 계수 규모 | 8×8 정규화 강도 (ratio=1) |
 |---|---|---|
 | capacity | `λ · s_j²` | 0.83 ~ 4.56 |
 | assignment (SS) | `λ` | **4.3 × 10⁻⁴** |
 
 SS의 assignment constraint는 계수가 전부 1이라 `λ`가 그대로 남는 반면,
-capacity는 `s_j`가 제곱되어 `s²`배 증폭된다. 비율이 정확히 `2/s²`다.
+capacity는 `s_j`가 제곱되어 증폭된다. 비율이 정확히 `2/s_max²`다.
+
 auto_scale 이후로 보면 assignment 계수가 `4.3×10⁻⁴`인데 ICE 노이즈는 `10⁻²`
-수준이라, **하드웨어는 capacity만 보고 assignment는 사실상 보지 못한다.**
+수준이다. **하드웨어는 capacity만 보고 assignment는 사실상 보지 못한다.**
+ratio를 올려 assignment 강도를 0.2~0.8 구간으로 끌어올리면 노이즈 위로 올라온다.
 
-capacity penalty를 고정한 채 assignment penalty만 키우면 (오프라인, SA 기준):
+penalty method가 요구하는 것은 각 constraint에 대해 `λ_k > Z_ub`이지
+"모든 constraint가 같은 λ"가 아니므로 **원칙 위반이 아니라 더 정확한 적용**이다.
 
-| | ratio=1 (기존) | 최적 ratio | coefficient range |
+### MS에는 적용되지 않는다 (반증 대조군)
+
+MS의 demand constraint는 계수가 binary expansion weight(최대 16)와 상수항
+`d_i`(최대 44)라 이미 증폭되어 있다. capacity 대비 비율이 SS의 `9.4×10⁻⁵`와
+달리 `6.6×10⁻²`로, **이미 균형이 맞아 있다.** 보정하면 오히려 나빠진다.
+
+이 대조 덕분에 SS의 개선이 우연이 아니라 **구조적 불균형을 고친 결과**임이
+확인된다.
+
+---
+
+## 결과 2: MS는 하드웨어 정밀도에 막힌다
+
+MS 6×6은 Pegasus에 embedding된다(4,503 물리 큐빗, chain break 1.5~2.1%).
+그런데 1,000회 샘플링에서 feasible solution이 **0개**다.
+
+같은 QUBO를 SA로 풀었을 때와 제약 위반량 분포를 비교하면 이렇다.
+(`results/processed/ms6x6_violation_summary.csv`)
+
+![violation distribution](results/figures/figure21_violation_distribution.png)
+
+| | SA | QA α=0.7 | QA α=1.5 |
 |---|---|---|---|
-| 4×4 SS feasible | 0.9% | **25.5%** (×28) | 변화 없음 |
-| 8×8 SS feasible | 0.2% | **44.4%** (×222) | 변화 없음 |
-| 4×4 SS gap | 7.3% | **0.0%** (최적해 발견) | 변화 없음 |
-| 8×8 SS gap | 33.4% | **14.7%** | 변화 없음 |
+| 최소 위반량 | **0** | 11 ~ 14 | 34 ~ 47 |
+| 중앙값 | **0** | 61 ~ 63.5 | 128.5 ~ 138 |
+| 최대 위반량 | **4** | 135 ~ 144 | 258 ~ 314 |
+| feasible 비율 | **97.7%** | 0% | 0% |
+| 위반 ≤ 10인 sample | **1,000 / 1,000** | **0** | **0** |
 
-`ratio < s_max²/2`인 동안은 capacity가 여전히 최대 계수이므로 **dynamic range를
-전혀 늘리지 않고 얻은 개선**이다. penalty method가 요구하는 것은 각 constraint에
-대해 `λ_k > Z_ub`이지 "모든 constraint가 같은 λ"가 아니므로 원칙 위반도 아니다.
+**QA의 최소 위반량이 SA의 최대 위반량보다 크다.** 두 분포는 겹치지 않는다.
+QA 쪽 1,000개 중 위반 10 이하가 하나도 없으므로, "아깝게 못 맞춘 것"이 아니라
+**근처에도 가지 못한다.** 중앙값 61은 총수요 226의 27%다.
 
-**MS에는 적용되지 않는다.** MS의 demand constraint는 계수가 binary expansion
-weight(최대 16)와 상수항 `d_i`(최대 44)라 이미 증폭되어 있어 불균형이 15~4배
-수준이다. 보정하면 오히려 feasible 비율이 90%에서 60%로 떨어진다. MS가 반증
-대조군 역할을 한다.
+같은 QUBO, 같은 제약, 같은 penalty이므로 차이는 하드웨어뿐이다.
 
-### 5. 계수 dynamic range는 penalty 방식의 구조적 귀결
+### 원인 후보를 하나씩 지웠다
+
+| 후보 | 판정 | 근거 |
+|---|---|---|
+| QUBO 변환 오류 | ✗ | 검증 26건 통과 (energy 항등식 상대오차 4.4e-14) |
+| 이산화 손실 | ✗ | 네 instance 모두 정확히 0 (아래 참조) |
+| embedding 실패 | ✗ | 4,503 큐빗으로 성공 |
+| chain break | ✗ | 1.3~2.1% |
+| annealing time | ✗ | 20→200μs, 10배 무효 |
+| num_reads | ✗ | 1,000→2,000 무효 |
+| chain strength α | ✗ | 1.5→0.7에서 위반량 2배 개선, 여전히 0개 |
+| **coefficient range** | **✓** | 남은 유일한 후보 |
+
+α sweep은 일관된 효과를 보인다. α를 낮추면 chain break가 오르는 대신
+(0.7%→16.7%) 위반량이 줄어, α=0.7 부근에서 최소가 된다. 하지만 개선폭이
+2배일 뿐 **0에 도달하지 못한다.** 등식 제약이라 근사가 소용없다.
+
+---
+
+## 결과 3: embedding을 가르는 것은 변수 수가 아니라 graph density
+
+MS 6×6은 논리변수 **259개**로 Pegasus 성공률이 52%인데, SS 15×15는 **329개**로
+embedding에 성공한다. 변수가 더 많은 쪽이 들어간다.
+
+6×6에서 이차항이 SS 571개, MS 8,701개로 **15배** 차이나기 때문이다. MS는
+`q_ij`를 binary expansion하면서 한 constraint 안의 항이 늘고, 제곱 전개 시
+이차항이 **항 수의 제곱**으로 늘어난다.
+
+| instance | SS 변수 / 이차항 | MS 변수 / 이차항 |
+|---|---|---|
+| 4×4 | 44 / 246 | 120 / 2,540 |
+| 6×6 | 79 / 571 | 259 / 8,701 |
+| 8×8 | 117 / 1,030 | 413 / 17,603 |
+| 15×15 | 329 / 5,026 | 1,439 / 123,857 |
+
+### Zephyr 실패의 원인은 용량이 아니라 working graph다
+
+MS 6×6 embedding 탐색 결과다. (`results/processed/embedding_study.csv`,
+`embedding_dry_study.csv`)
+
+| target | 시행 | 성공률 | 물리 큐빗(중앙값) | 최대 chain |
+|---|---|---|---|---|
+| Pegasus (실제 Advantage) | 25 | **52%** | 4,675 | 40 |
+| Zephyr (실제 Advantage2) | 40 | **0%** | — | — |
+| **Zephyr Z12 (이상적 그래프)** | 5 | **80%** | **3,644** | 27 |
+
+**이상적 Zephyr는 3,644 큐빗으로 성공한다.** 실제 Advantage2의 가용 큐빗
+4,577개보다 작으므로 **용량 부족이 아니다.** Pegasus의 4,675개보다도 22% 적고
+chain도 짧다. 연결도가 높은 이점이 실제로 나타난다.
+
+그런데 실제 Advantage2에서는 40회 전부 실패했다. 차이는 **결함 큐빗**뿐이다
+(이상적 4,800 대 실제 4,577, 4.6% 차이). 결함이 탐색을 막는 것으로 보인다.
+
+8×8 이상은 두 topology 모두 실패했다. Pegasus에서 6×6의 overhead(18.1)를 그대로
+적용해도 413 × 18.1 ≈ 7,450 큐빗이 필요해 가용량 5,627을 넘는다.
+
+**minorminer는 heuristic이므로 탐색 실패를 embedding 불가능의 증명으로 해석하지
+않는다.** 이 저장소의 "실패"는 모두 "주어진 예산 안에서 찾지 못했다"는 뜻이다.
+
+---
+
+## 결과 4: 1 unit discretization 손실은 구조적으로 0
+
+`y`를 고정하면 남는 `q` 문제는 transportation problem이고 그 제약행렬은
+**totally unimodular**이다. demand와 capacity가 정수이므로 LP 최적해가 이미
+정수점에 놓인다. 네 instance 모두 연속 해의 소수부가 정확히 0이었고,
+`MS`와 `MS-int-q`의 목적값이 완전히 일치했다.
+
+따라서 QUBO 해의 gap은 **이산화가 아니라 solver 품질**에서 온 것으로 귀속된다.
+
+---
+
+## 결과 5: feasibility와 solution quality는 반대 방향을 가리킨다
+
+본 실험(parameter 고정, `linking=False`) 결과다. (`results/processed/all_results.csv`)
+
+| | SS feasible | SS gap | MS feasible | MS gap |
+|---|---|---|---|---|
+| 4×4 | 0.9% | 7.29% | 89.7% | 29.24% |
+| 6×6 | 0.2% | 22.54% | 97.7% | 30.86% |
+| 8×8 | 0.2% | 33.38% | 90.9% | 84.28% |
+| 15×15 | 0.0% | 해 없음 | 99.9% | 83.04% |
+
+MS는 constraint를 훨씬 쉽게 만족시키지만 optimality gap은 오히려 크다.
+**"어느 formulation이 나은가"에 한 문장으로 답할 수 없다.**
+
+같은 표의 QA 열은 이렇다. SS 4×4만 feasible solution을 냈고(0.3%, gap 27.06%),
+나머지는 0%이거나 `NOT_EMBEDDABLE`이다. 위의 **결과 1**에서 penalty를 보정하면
+이 값이 크게 달라진다.
+
+---
+
+## 결과 6: 계수 dynamic range는 penalty 방식의 구조적 귀결
 
 ```
 range ≈ (λ / c_min) × s_max²
@@ -106,43 +202,28 @@ range ≈ (λ / c_min) × s_max²
 | instance | penalty 우위 | 제곱 | 합계 | 하드웨어 |
 |---|---|---|---|---|
 | 4×4 | 5.2 bit | 12.3 bit | **17.5 bit** | |
-| 8×8 | 8.2 bit | 14.4 bit | **22.6 bit** | 약 5 bit |
+| 6×6 | 7.2 bit | 12.2 bit | **19.5 bit** | 약 5 bit |
+| 8×8 | 8.2 bit | 14.4 bit | **22.6 bit** | |
 | 15×15 | 8.4 bit | 13.7 bit | **22.1 bit** | |
 
-시도해 본 개선책과 실측 효과:
+시도해 본 개선책과 실측 효과다.
 
 | 방법 | 효과 | 비고 |
 |---|---|---|
-| chain strength α (1.5 → 0.7) | **2배** | 실측. 위반량 분포 전체가 이동 |
-| tighter λ (`λ > Z_ub`) | 2.2 bit | rigorous, 무료 |
+| **constraint별 λ 균형** | **QA가 SS 4×4·6×6을 해결** | range 불변. 가장 효과적 |
+| chain strength α (1.5 → 0.7) | 위반량 2배 개선 | 실측. feasible에는 도달 못 함 |
+| tighter λ (`λ > Z_ub`) | 2.2 bit | rigorous, 무료. 미실행 |
 | big-M 재구성 | 0.5 bit | 상수항 교차로 대부분 상쇄 |
-| resolution 조정 | — | **이 문제에서는 불가능** (아래 참조) |
+| resolution 조정 | — | **이 문제에서는 불가능** |
 | 균등 스케일링 / gcd | 0 bit | 비율 불변, `auto_scale`이 이미 수행 |
-| constraint별 λ (MS) | 역효과 | 이미 균형이 맞아 있음 |
 
 resolution을 키우면 range가 줄지만, MS의 demand constraint가 등식이라
 `Σ_j q_ij = d_i`를 만족할 수 없게 된다. demand가 44인 customer가 있으면
 δ=2에서도 15명 중 5명이 표현 불가능해진다.
 
-**전부 합쳐도 3~4비트다.** 필요한 것은 17비트다.
-
-### 6. Zephyr는 연결도가 높지만 용량이 적다
-
-| solver | 큐빗 | 엣지 | 평균차수 | 최대 clique |
-|---|---|---|---|---|
-| Advantage (Pegasus P16) | **5,627** | 40,279 | 14.3 | K_180 |
-| Advantage2 (Zephyr Z12) | **4,577** | 41,514 | **18.1** | K_184 |
-
-연결도는 27% 높지만 큐빗이 19% 적어, 조밀한 그래프를 담는 실질 용량은
-**거의 동등하다**(K_184 대 K_180, +2%).
-
-MS 6×6에서 Pegasus는 tries=10으로 **5/5 성공**(최소 4,503 물리 큐빗)한 반면,
-Zephyr는 tries 5·10·20, 누적 9.1시간의 **완전 소진 탐색 15회에서 전부 실패**했다.
-Pegasus 성공 사례의 용량 사용률이 80%인데, Zephyr는 동일 논리 그래프를 담으려면
-86% 이상으로 올라간다.
-
-8×8 이상은 두 topology 모두 실패했다. 6×6의 overhead를 그대로 적용해도 필요
-물리 큐빗이 약 7,450개로 두 장비의 용량을 넘는다.
+**`λ`와 `s_max²`는 penalty method를 쓰는 한 줄일 수 없다.** `λ ≥ Z_ub`는 정의상
+필수이고, 제곱은 penalty 형태 자체에서 온다. 남은 레버를 다 써도 3~4비트이며,
+필요한 것은 12~17비트다.
 
 ---
 
@@ -150,8 +231,8 @@ Pegasus 성공 사례의 용량 사용률이 80%인데, Zephyr는 동일 논리 
 
 **QPU embedding 실험은 working graph를 명시하지 않으면 재현되지 않는다.**
 
-실제로 겪은 사례다. 동일 solver(`Advantage_system6`), 동일 seed, 동일 tries에서
-`graph_id`가 다르다는 이유만으로 성공률이 갈렸다.
+동일 solver(`Advantage_system6`), 동일 seed, 동일 tries에서 `graph_id`가 다르다는
+이유만으로 성공률이 갈렸다.
 
 | seed | graph A (tries=5) | graph A (tries=10) | graph B (tries=10) |
 |---|---|---|---|
@@ -213,8 +294,12 @@ Obj_MS ≤ Obj_MS-int-q ≤ Obj_SS
 | 15×15 | 329 | 554 | 1,439 | 2,774 |
 
 MS가 훨씬 크게 손해를 본다. SS는 slack이 1비트면 되지만 MS는 `q_ij ≤ d_i y_j`라
-slack 범위가 `[0, d_i]`여서 5~6비트가 필요하다. 측정된 SA 영향은 **MS의 feasible
-비율이 90~100%에서 60% 안팎으로 하락**, SS는 거의 변화 없음이다.
+slack 범위가 `[0, d_i]`여서 5~6비트가 필요하다.
+
+**측정된 SA 영향**은 MS에 집중된다. feasible 비율이 89.7→63.0, 97.7→65.3,
+90.9→59.7, 99.9→58.8%로 떨어진다. SS는 0.9→0.8, 0.2→0.3, 0.2→0.3, 0→0으로
+거의 변화가 없다. feasible region은 동일하므로 이 차이는 전부 **QUBO 표현의
+비용**이다.
 
 ---
 
@@ -227,7 +312,8 @@ q_ij = d_i x_ij   ⟹   q_ij ∈ {0, 1, ..., d_i},   x_ij = q_ij / d_i
 ```
 
 정수 전환 자체는 변수를 늘리지 않는다(`x_ij` 225개 → `q_ij` 225개).
-변수를 늘리는 것은 그다음의 binary expansion이다.
+변수를 늘리는 것은 그다음의 binary expansion이다. 15×15 MS의 변수 1,439개 중
+**1,335개(93%)가 encoding 변수**이고 slack은 89개로 SS와 같다.
 
 ### truncated binary expansion
 
@@ -249,8 +335,8 @@ q = Σ_k w_k z_k
 
 **encoding은 coefficient range에 거의 영향을 주지 않는다.** encoding weight의
 최댓값은 변수의 range에 묶여 있어 `q_ij ∈ [0,44]`면 최대 16인 반면, 지배항은
-`s_j = 115`에서 온다. 실제로 SS와 MS는 변수 수가 4.4배 차이나는데 15×15의 최대
-계수가 `8.29×10⁸`으로 **완전히 같다.**
+`s_j`에서 온다. 실제로 8×8과 15×15는 SS와 MS의 계수 범위가
+`7.21×10⁸`, `1.58×10⁹`으로 **완전히 같다.** 변수 수는 3.5배, 4.4배 차이나는데도.
 
 ### penalty coefficient
 
@@ -262,7 +348,7 @@ U_obj = Σ_j f_j + Σ_i Σ_j c_ij d_i
 **더 tight한 유효 하한이 존재한다.** infeasible solution의 energy는 최소 `λ`인
 반면 optimal solution의 energy는 알려진 feasible solution의 objective `Z_ub`
 이하이므로, `λ > Z_ub`이면 ground state가 feasible임이 보장된다. 8×8에서
-`U_obj` 기준 λ는 `Z_ub`의 4.56배로 필요한 것보다 4.5배 크다.
+`U_obj` 기준 λ(18,024.6)는 `Z_ub`(3,952.5)의 4.56배로 필요한 것보다 4.5배 크다.
 
 본 실험은 λ를 grid search 하지 않으며, 진단 실험(notebook 10~13)에서만
 의도적으로 변화시키고 그 값을 본 실험 설정으로 채택하지 않는다.
@@ -340,7 +426,6 @@ SA/QA 실행 전에 통과해야 하는 검증이다. **총 26건 전부 통과.
 ```text
 cflp-formulation/
 ├── config/experiment_config.yaml     모든 고정값의 단일 출처
-├── data/generated/                   생성된 instance (JSON)
 ├── src/
 │   ├── config.py                     설정 로딩
 │   ├── data_generator.py             instance 생성
@@ -396,9 +481,9 @@ jupyter lab notebooks/     # 01 → 06 순서
 
 # 3) 진단 실험 (필요한 것만)
 #    10, 11 : λ 민감도
-#    12, 13 : constraint별 λ 균형
-#    14~16  : embedding 실패 원인 (QA_DRYRUN=True면 토큰 없이 실행)
-#    30~32  : 고정 embedding QA
+#    12, 13 : constraint별 λ 균형   ← 결과 1의 근거
+#    20~22  : embedding 실패 원인 (QA_DRYRUN=True면 토큰 없이 실행)
+#    30~32  : 고정 embedding QA, 위반량 분포
 ```
 
 QA를 실행하려면 D-Wave 토큰이 필요하다.
@@ -409,22 +494,17 @@ export DWAVE_API_TOKEN="..."      # 또는 dwave config create
 
 토큰이 없으면 `05_run_qa.ipynb`는 `NO_QPU_ACCESS`를 기록하고 정상 종료하며,
 `06_compare_results.ipynb`는 QA 없이 결과를 통합한다.
-notebook 14~16은 `QA_DRYRUN=True`로 오프라인 실행이 가능하다.
+notebook 20~22는 `QA_DRYRUN=True`로 오프라인 실행이 가능하다.
 
 ### 오프라인 embedding 검증
 
 토큰 없이도 `dwave_networkx`의 이상적 그래프에 minorminer를 직접 실행해
-embedding 가능 여부를 확인할 수 있다. 실제 QPU 결과와 잘 일치한다.
+embedding 가능 여부를 확인할 수 있다.
 
-| instance | 논리변수 | 오프라인 물리큐빗 | 실제 QPU |
-|---|---|---|---|
-| 4×4 SS | 44 | 105 | 105 |
-| 8×8 SS | 117 | 568 | 619 |
-| 4×4 MS | 120 | 1,026 | 1,060 |
-| 6×6 MS | 259 | 실패 | 실패 |
-
-단 **이상적 그래프는 실제보다 낙관적이다.** Zephyr Z15(7,440 큐빗)는 실제
-Advantage2(4,577 큐빗)보다 62% 크므로, 비교하려면 `zephyr 12`를 써야 한다.
+단 **이상적 그래프는 실제보다 낙관적이다.** 위 결과 3에서 보듯 이상적 Zephyr
+Z12는 MS 6×6을 80% 성공률로 embedding하지만 실제 Advantage2는 0%다.
+또한 `zephyr 15`(7,440 큐빗)는 실제 Advantage2(4,577 큐빗)보다 62% 크므로,
+비교하려면 `zephyr 12`를 써야 한다.
 
 ---
 
@@ -435,12 +515,8 @@ runtime이 짧다는 이유만으로 우열을 판단하지 않는다. 다음을
 solution quality / exactness / feasibility / classical runtime / QPU runtime /
 scalability / QUBO size / graph density / coefficient range / embedding feasibility
 
-**minorminer는 heuristic이므로 탐색 실패를 embedding 불가능의 증명으로 해석하지
-않는다.** 이 저장소의 "실패" 기록은 모두 "주어진 예산 안에서 찾지 못했다"는
-뜻이다.
-
-본 실험은 QA parameter tuning 실험이 아니다. 참고로 annealing time을 20μs에서
-200μs로 10배, num reads를 2배로 늘려도 결과가 실질적으로 같았다.
+본 실험은 QA parameter tuning 실험이 아니다. annealing time을 20μs에서 200μs로
+10배, num reads를 2배로 늘려도 결과가 실질적으로 같았다.
 
 ### 하드웨어 정밀도에 대한 주의
 
@@ -493,9 +569,13 @@ Figure의 축 레이블과 범례는 한글 폰트 의존성을 피하기 위해
 
 ## 다음 단계
 
-penalty 기반 monolithic QUBO의 한계가 정량화되었으므로, 다음은 문제를 쪼개
-QPU에 넘기는 부분을 작게 만드는 방향이다. Benders decomposition의 master problem은
-`y_j`와 `θ`만 가지므로 embedding 문제는 사라진다.
+**constraint별 penalty 균형**은 이 저장소에서 나온 가장 실용적인 결과다.
+SS에서 QA가 최적해를 찾게 만들었고 coefficient range를 전혀 늘리지 않았다.
+다른 QUBO 문제에도 적용 가능한지가 자연스러운 후속 질문이다.
+
+**MS의 한계**는 penalty 방식 자체에 있으므로, 문제를 쪼개 QPU에 넘기는 부분을
+작게 만드는 방향이 남는다. Benders decomposition의 master problem은 `y_j`와 `θ`만
+가지므로 embedding 문제는 사라진다.
 
 다만 **coefficient range 문제는 `θ`의 binary expansion으로 이동한다.** `θ`의
 범위가 크면 weight가 커지고, 제곱되어 계수에 들어간다. `θ` precision을 거칠게
